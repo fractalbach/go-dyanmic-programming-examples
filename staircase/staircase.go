@@ -3,13 +3,26 @@
 // You can take either 1, 2, or 3 steps up the stairs at a time.  How
 // many different ways can you go up a staircase with n steps?
 
-// My Process
+// Overview:
 
-// - Create the base cases: 1,2,3
-// - Create a map to store solutions.
-// - produce combinations in the form n = a + b
-// - solve for f(n) = f(a) + f(b) when n > 3
-// - populate the map with newly discovered values
+/*
+
+- Identify the base cases:  f(1), f(2), f(3)
+
+- Create data storage for base cases and future solutions. In this
+  problem, an array could be used, but I will use a hash map because
+  it makes it a bit easier to confirm if a value is absent.
+
+- Find a recursive formula:  f(n) = f(n-1) + f(n-2) + f(n-3)
+
+- After calling f(n) check to see if you already have the solution. If
+  you don't have it yet, then execute the recursive formula.
+
+- Save the solution after calculating a new f(n) value.
+
+- Let recursion slowly diminish n down to 0 until the program finishes.
+
+*/
 
 package main
 
@@ -36,11 +49,12 @@ func nWays(n int) int {
 	if ok {
 		return v
 	}
-	ways := 0
-	for i := 1; i < n; i++ {
-		ways += nWays(i)
-		ways += nWays(n - i)
-	}
+	// ways := 0
+	// for i := 1; i < n; i++ {
+	// 	ways += nWays(i)
+	// 	ways += nWays(n - i)
+	// }
+	ways := nWays(n-1) + nWays(n-2) + nWays(n-3)
 	memo[n] = ways
 	return ways
 }
@@ -56,20 +70,17 @@ func nWaysVerbose(n int) int {
 	if ok {
 		return v
 	}
-	fmt.Printf("f(%d) := 0\n", n)
-	ways := 0
-	for i := 1; i < n; i++ {
-		a := i
-		b := n - i
-		aWays := nWaysVerbose(a)
-		bWays := nWaysVerbose(b)
-		ways += aWays + bWays
-		fmt.Printf(
-			"f(%d) += f(%d) + f(%d) = %d + %d\n",
-			n, a, b, aWays, bWays)
-	}
+	ways1 := nWaysVerbose(n - 1)
+	ways2 := nWaysVerbose(n - 2)
+	ways3 := nWaysVerbose(n - 3)
+	ways := ways1 + ways2 + ways3
+	fmt.Printf(
+		"f(%d) = f(%d) + f(%d) + f(%d)  =  %d + %d + %d  =  %d\n",
+		n,
+		n-1, n-2, n-3,
+		ways1, ways2, ways3, ways,
+	)
 	memo[n] = ways
-	fmt.Printf("f(%d) = %d\n", n, ways)
 	return ways
 }
 
@@ -86,7 +97,7 @@ func printMap() {
 func main() {
 	fmt.Println("Staircase:")
 	var (
-		n         = 20
+		n         = 40
 		startTime = time.Now()
 		answer    = nWaysVerbose(n)
 		endTime   = time.Now()
