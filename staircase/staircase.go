@@ -28,6 +28,7 @@ package main
 
 import (
 	"fmt"
+	"math/big"
 	"time"
 )
 
@@ -37,10 +38,18 @@ var memo = map[int]int{
 	3: 4, // f(3) = 4 because 3 = 3 = 2+1 = 1+2 = 1+1+1
 }
 
+var memoBig = map[int]*big.Int{
+	0: big.NewInt(0),
+	1: big.NewInt(1),
+	2: big.NewInt(2),
+	3: big.NewInt(4),
+}
+
 // nWays recursively solves for the number of ways you can go up the
 // staircase, using memoization to store solutions as they are
 // discoverd.  A hashmap is used as storage, although in this problem:
 // a simple array would work just as well.
+//
 func nWays(n int) int {
 	if n <= 0 {
 		return 0
@@ -49,11 +58,6 @@ func nWays(n int) int {
 	if ok {
 		return v
 	}
-	// ways := 0
-	// for i := 1; i < n; i++ {
-	// 	ways += nWays(i)
-	// 	ways += nWays(n - i)
-	// }
 	ways := nWays(n-1) + nWays(n-2) + nWays(n-3)
 	memo[n] = ways
 	return ways
@@ -62,6 +66,7 @@ func nWays(n int) int {
 // nWaysVerbose does the same thing as nWays, but will additionally
 // show the process of how nWays(n) is solved, revealing its tree-like
 // recursive structure.
+//
 func nWaysVerbose(n int) int {
 	if n <= 0 {
 		return 0
@@ -84,6 +89,30 @@ func nWaysVerbose(n int) int {
 	return ways
 }
 
+// nWaysBig calculates the solution to the staricase problem using
+// arbitrary length integers from the math/big package. Same general
+// procedure as nWays, but allows you to calculate f(n) for high
+// values of n, and see how significant memoization is on the abilit
+// to quickly find the solution.
+//
+func nWaysBig(n int) *big.Int {
+	if n <= 0 {
+		return big.NewInt(0)
+	}
+	v, ok := memoBig[n]
+	if ok {
+		return v
+	}
+	a := nWaysBig(n - 1)
+	b := nWaysBig(n - 2)
+	c := nWaysBig(n - 3)
+	ways := big.NewInt(0)
+	ways.Add(a, b)
+	ways.Add(ways, c)
+	memoBig[n] = ways
+	return ways
+}
+
 // printMap displays the saved solutions that have been discovered
 // using nWays.
 func printMap() {
@@ -94,16 +123,61 @@ func printMap() {
 	}
 }
 
-func main() {
-	fmt.Println("Staircase:")
+// printMapBig displays the solutions from solving nWaysBig.  Note: The numbers
+// are arbitrary length integers, so they can get quite intense for
+// high values of n.
+func printMapBig() {
+	fmt.Println("Solutions:")
+	for i := 0; i <= len(memoBig); i++ {
+		v := memoBig[i]
+		fmt.Printf("f(%d) = %v\n", i, v)
+	}
+}
+
+// runTest calls the nWays function for the given value of n, and
+// returns the duration of time it took to produce an answer for
+// nWays(n)
+func runTest(n int) (int, time.Duration) {
 	var (
-		n         = 40
 		startTime = time.Now()
-		answer    = nWaysVerbose(n)
+		answer    = nWays(n)
 		endTime   = time.Now()
 		runTime   = endTime.Sub(startTime)
 	)
-	printMap()
-	fmt.Println("Answer:", answer)
-	fmt.Println("TimeTaken:", runTime)
+	return answer, runTime
+}
+
+// runSuperTest calls the nWaysBig function, which uses arbitrary
+// length integers from the go standard library's "math/big"
+// package. returns the duration of runTime.
+func runSuperTest(n int) time.Duration {
+	start := time.Now()
+	nWaysBig(n)
+	end := time.Now()
+	return end.Sub(start)
+}
+
+func main() {
+
+	// ______________________________
+	// Input Value
+	// ==============================
+	const n = 100
+
+	// ______________________________
+	// Regular Integers
+	// ==============================
+	// _, dur := runTest(40)
+	// printMap()
+
+	// ______________________________
+	// Arbitrary-Length Integers
+	// ==============================
+	dur := runSuperTest(n)
+	printMapBig()
+
+	// ______________________________
+	// Print Runtime duration
+	// ==============================
+	fmt.Println("RunTime:", dur)
 }
